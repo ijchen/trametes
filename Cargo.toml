@@ -1,0 +1,11 @@
+[package]
+name = "trametes"
+version = "0.1.0"
+authors = ["Isaac Chen"]
+description = "A free and open source raster graphics editor written in Rust"
+license = "MIT OR Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/ijchen/trametes"
+edition = "2021"
+
+[dependencies]
