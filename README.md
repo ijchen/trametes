@@ -1,9 +1,10 @@
 Trametes (pronounced truh-MEET-ees) is a lightweight, free, and open source
 raster graphics editor written in Rust. It is designed to be easy to use for
-quick edits, yet powerful enough to handle more involved tasks painlessly.
+quick edits, but still capable of handling more involved tasks.
 
+[//]: # (TODO: Add discord server link for Trametes so they can "get in touch")
 Currently, Trametes is a hobby project by a single developer (me, Isaac. Hello!)
-and is likely not suitable for general use. If you're interested in contributing
+and is not really suitable for general use. If you're interested in contributing
 or collaborating, please get in touch - I'd love to hear from you.
 
 # Getting Started
