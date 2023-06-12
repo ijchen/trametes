@@ -1,5 +1,8 @@
 use eframe::{App, CreationContext, Frame};
-use egui::{Color32, ColorImage, FontFamily, FontId, ImageData, Pos2, Rect, TextStyle, Ui};
+use egui::{
+    Color32, ColorImage, FontFamily, FontId, ImageData, Pos2, Rect, TextStyle, TextureFilter,
+    TextureOptions, Ui,
+};
 
 #[derive(Debug)]
 struct Windows {
@@ -301,26 +304,36 @@ fn make_draggable_windows(app: &mut TrametesApp, ctx: &egui::Context, frame: &mu
 
 /// Makes the actual image itself
 fn make_image(app: &mut TrametesApp, ui: &mut Ui) {
-    // TODO do we *really* need to reallocate a texture each time? I don't think
-    // we're supposed to
+    // Create a texture for the image
+    // TODO do we *really* need to recreate a new texture each time?
     let image =
         ColorImage::from_rgba_unmultiplied([app.image.width, app.image.height], &app.image.pixels);
     let image_data = ImageData::Color(image);
-    let texture = ui
-        .ctx()
-        .load_texture("TODO", image_data, Default::default()); // TODO name
+    let texture = ui.ctx().load_texture(
+        "main image",
+        image_data,
+        TextureOptions {
+            magnification: TextureFilter::Nearest,
+            minification: TextureFilter::Linear,
+        },
+    );
 
-    // TODO calculate this in a good way
+    // Calculate the transformed screen rect to draw the image in
     let panel_rect = ui.ctx().available_rect();
     let width = app.image.width as f32 * app.image_relative_pos.scale;
     let height = app.image.height as f32 * app.image_relative_pos.scale;
     let pos = rect(
-        panel_rect.min.x + (panel_rect.width() - width) / 2.0 + app.image_relative_pos.x,
-        panel_rect.min.y + (panel_rect.height() - height) / 2.0 + app.image_relative_pos.y,
-        width,
-        height,
+        f32::round(
+            panel_rect.min.x + (panel_rect.width() - width) / 2.0 + app.image_relative_pos.x,
+        ),
+        f32::round(
+            panel_rect.min.y + (panel_rect.height() - height) / 2.0 + app.image_relative_pos.y,
+        ),
+        f32::round(width),
+        f32::round(height),
     );
 
+    // Draw the image
     egui::Image::new(&texture, texture.size_vec2()).paint_at(ui, pos);
 }
 
