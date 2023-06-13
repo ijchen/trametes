@@ -8,14 +8,14 @@ use native_dialog::MessageType;
 use crate::fileio::{get_image_path, info_popup, read_image_from_file};
 
 #[derive(Debug)]
-struct Windows {
+struct VisibleWindows {
     tools: bool,
     colors: bool,
     history: bool,
     layers: bool,
 }
 
-impl Default for Windows {
+impl Default for VisibleWindows {
     fn default() -> Self {
         Self {
             tools: true,
@@ -38,14 +38,16 @@ impl Default for PixelBuffer {
         let width = 800;
         let height = 600;
         // let pixels = vec![u8::MAX; width * height * 4];
-        let pixels = [(0, 0, 0), (255, 0, 255)]
-            .into_iter()
-            .cycle()
-            .take(width)
-            .chain([(255, 0, 255), (0, 0, 0)].into_iter().cycle().take(width))
-            .cycle()
-            .take(width * height)
-            .map(|(r, g, b)| [r, g, b, 255])
+        // let pixels = [(0, 0, 0), (255, 0, 255)]
+        //     .into_iter()
+        //     .cycle()
+        //     .take(width)
+        //     .chain([(255, 0, 255), (0, 0, 0)].into_iter().cycle().take(width))
+        //     .cycle()
+        const WHITE: [u8; 4] = [255, 255, 255, 255];
+        let pixel_count = width * height;
+        let pixels: Vec<u8> = std::iter::repeat(WHITE)
+            .take(pixel_count)
             .flatten()
             .collect();
         Self {
@@ -76,7 +78,7 @@ impl Default for ImageRelativePos {
 /// The persistant state of an instance of Trametes
 #[derive(Debug)]
 pub struct TrametesApp {
-    windows: Windows,
+    windows: VisibleWindows,
     image: PixelBuffer,
     image_relative_pos: ImageRelativePos,
 }
