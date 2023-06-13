@@ -3,6 +3,9 @@ use egui::{
     Color32, ColorImage, FontFamily, FontId, ImageData, Pos2, Rect, TextStyle, TextureFilter,
     TextureOptions, Ui,
 };
+use native_dialog::MessageType;
+
+use crate::fileio::{get_image_path, info_popup, read_image_from_file};
 
 #[derive(Debug)]
 struct Windows {
@@ -131,7 +134,29 @@ fn make_top_menu_bar(app: &mut TrametesApp, ctx: &egui::Context, frame: &mut Fra
                 }
 
                 if ui.button("Open...").clicked() {
-                    todo!()
+                    match get_image_path() {
+                        Some(path) => {
+                            match read_image_from_file(&path) {
+                                Some(((width, height), pixels)) => {
+                                    app.image = PixelBuffer {
+                                        pixels,
+                                        width: width as usize,
+                                        height: height as usize,
+                                    };
+
+                                    app.image_relative_pos = ImageRelativePos::default();
+                                }
+                                None => {
+                                    eprintln!("failed to read image from file path: {path:?}");
+                                    info_popup("Failed to read file", MessageType::Error);
+                                }
+                            };
+                        }
+                        None => {
+                            // The user likely hit "cancel", do nothing and
+                            // carry on
+                        }
+                    }
                 }
 
                 ui.menu_button("Open Recent", |ui| {
@@ -348,7 +373,7 @@ pub fn make_main_panel(app: &mut TrametesApp, ctx: &egui::Context, frame: &mut F
     egui::CentralPanel::default()
         .frame(panel_frame)
         .show(ctx, |ui| {
-            // TODO temp testing
+            // Handle user inputs
             ui.input(|input| {
                 app.image_relative_pos.scale *= f32::powf(1.01, input.scroll_delta.y);
                 let panel_rect = ui.ctx().available_rect();
@@ -365,7 +390,9 @@ pub fn make_main_panel(app: &mut TrametesApp, ctx: &egui::Context, frame: &mut F
                     app.image_relative_pos.scale.clamp(min_scale, max_scale);
                 app.image_relative_pos.scale;
 
-                if input.pointer.is_decidedly_dragging() {
+                // TODO not do this janky dt hack to get around
+                // is_decidedly_dragging() not handling file -> open and friends
+                if input.pointer.is_decidedly_dragging() && input.unstable_dt < 1.0 {
                     app.image_relative_pos.x += input.pointer.delta().x;
                     app.image_relative_pos.y += input.pointer.delta().y;
                 };

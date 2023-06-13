@@ -12,4 +12,5 @@
 // `app` mod? This feels overcomplicated
 
 mod app;
+mod fileio;
 pub use app::TrametesApp;
