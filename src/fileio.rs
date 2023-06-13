@@ -1,6 +1,6 @@
 use std::path::{Path, PathBuf};
 
-use image::GenericImageView;
+use image::{io::Reader, GenericImageView};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
 /// Displays a popup message to the user
@@ -33,7 +33,14 @@ pub fn get_image_path() -> Option<PathBuf> {
 
 /// Reads an image from a file path
 pub fn read_image_from_file(path: &Path) -> Option<((u32, u32), Vec<u8>)> {
-    let img = image::open(path).ok()?;
+    let img = Reader::open(path)
+        .ok()?
+        // Guess the encoding format based on the file contents instead of the
+        // extension
+        .with_guessed_format()
+        .ok()?
+        .decode()
+        .ok()?;
 
     let (width, height) = img.dimensions();
 
