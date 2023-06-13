@@ -1,6 +1,6 @@
 use eframe::{App, CreationContext, Frame};
 use egui::{
-    Color32, ColorImage, FontFamily, FontId, ImageData, Pos2, Rect, TextStyle, TextureFilter,
+    pos2, Color32, ColorImage, FontFamily, FontId, ImageData, Pos2, Rect, TextStyle, TextureFilter,
     TextureOptions, Ui,
 };
 use native_dialog::MessageType;
@@ -360,8 +360,14 @@ fn make_image(app: &mut TrametesApp, ui: &mut Ui) {
         f32::round(height),
     );
 
-    // Draw the image
-    egui::Image::new(&texture, texture.size_vec2()).paint_at(ui, pos);
+    // Draw the image (clipped so it doesn't cover the UI)
+    let painter = ui.painter_at(ui.available_rect_before_wrap());
+    painter.image(
+        (&texture).into(),
+        pos,
+        Rect::from_min_max(pos2(0.0, 0.0), pos2(1.0, 1.0)), // No transform
+        Color32::WHITE,                                     // No tint
+    );
 }
 
 /// Makes the "main panel" (the large central area with the editable image)
