@@ -8,6 +8,7 @@ use native_dialog::MessageType;
 use crate::{
     app::{ImageTransformations, PixelBuffer},
     fileio::{get_image_path, info_popup, read_image_from_file},
+    tools::Tool,
     TrametesApp,
 };
 
@@ -110,6 +111,64 @@ pub fn screen_to_image_coords(
     let image_y = image_size.1 * frac_across_height;
 
     pos2(image_x, image_y)
+}
+
+pub fn zoom_image(zoom_delta: f32, zoom_origin: Pos2, app: &mut TrametesApp, panel_rect: Rect) {
+    // TODO do we want to do an epsilon comparison here? I feel like
+    // it's reasonable to expect *exactly* 1.0, but maybe not. Idk
+    if zoom_delta != 1.0 {
+        let original_scale = app.image_relative_pos.scale;
+
+        // Adjust the scale
+        app.image_relative_pos.scale *= zoom_delta;
+        let min_scale = 0.5
+            * f32::min(
+                panel_rect.width() / app.image.width as f32,
+                panel_rect.height() / app.image.height as f32,
+            );
+        let max_scale = f32::min(
+            panel_rect.width() as f32 / 2.0,
+            panel_rect.height() as f32 / 2.0,
+        );
+        app.image_relative_pos.scale = app.image_relative_pos.scale.clamp(min_scale, max_scale);
+        app.image_relative_pos.scale;
+
+        // Adjust the x and y translation so the cursor's location
+        // relative to the image is unchanged
+        let original_image_pos = screen_to_image_coords(
+            zoom_origin,
+            &ImageTransformations {
+                scale: original_scale,
+                ..app.image_relative_pos
+            },
+            (app.image.width as f32, app.image.height as f32),
+            panel_rect,
+        );
+        let new_image_pos = screen_to_image_coords(
+            zoom_origin,
+            &app.image_relative_pos,
+            (app.image.width as f32, app.image.height as f32),
+            panel_rect,
+        );
+        let image_delta_x = original_image_pos.x - new_image_pos.x;
+        let image_delta_y = original_image_pos.y - new_image_pos.y;
+        let screen_delta_x = image_delta_x * app.image_relative_pos.scale;
+        let screen_delta_y = image_delta_y * app.image_relative_pos.scale;
+        app.image_relative_pos.x_translation -= screen_delta_x;
+        app.image_relative_pos.y_translation -= screen_delta_y;
+    }
+}
+
+fn clamp_image_to_bounds(app: &mut TrametesApp, panel_rect: Rect) {
+    let width = app.image.width as f32 * app.image_relative_pos.scale;
+    let height = app.image.height as f32 * app.image_relative_pos.scale;
+    let margin = 0.25;
+    let min_x = panel_rect.width() * margin - (panel_rect.width() + width) / 2.0;
+    let max_x = panel_rect.width() * (1.0 - margin) - (panel_rect.width() - width) / 2.0;
+    let min_y = panel_rect.height() * margin - (panel_rect.height() + height) / 2.0;
+    let max_y = panel_rect.height() * (1.0 - margin) - (panel_rect.height() - height) / 2.0;
+    app.image_relative_pos.x_translation = app.image_relative_pos.x_translation.clamp(min_x, max_x);
+    app.image_relative_pos.y_translation = app.image_relative_pos.y_translation.clamp(min_y, max_y);
 }
 
 /// Makes basic and global style changes to the given context
@@ -281,7 +340,8 @@ fn make_draggable_windows(app: &mut TrametesApp, ctx: &Context, frame: &mut Fram
         .default_rect(rect(0.0, 0.0, width * 0.025, height * 0.33))
         .open(&mut app.windows.tools)
         .show(ctx, |ui| {
-            // TODO put stuff here
+            ui.radio_value(&mut app.tool, Tool::Pan, "Pan");
+            ui.radio_value(&mut app.tool, Tool::Brush, "Brush");
 
             // Allow filling extra room with empty space (prevents automatic
             // shrinking after resizing)
@@ -383,75 +443,19 @@ fn make_main_panel(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
         ui.input(|input| {
             let panel_rect = ui.ctx().available_rect();
 
-            // TODO do we want to do an epsilon comparison here? I feel like
-            // it's reasonable to expect *exactly* 1.0, but maybe not. Idk
-            if input.zoom_delta() != 1.0 {
-                let original_scale = app.image_relative_pos.scale;
+            // Handle zooming
+            let zoom_origin = input
+                .pointer
+                .interact_pos()
+                .filter(|pos| panel_rect.contains(*pos))
+                .unwrap_or(panel_rect.center());
+            zoom_image(input.zoom_delta(), zoom_origin, app, panel_rect);
 
-                // Adjust the scale
-                app.image_relative_pos.scale *= input.zoom_delta();
-                let min_scale = 0.5
-                    * f32::min(
-                        panel_rect.width() / app.image.width as f32,
-                        panel_rect.height() / app.image.height as f32,
-                    );
-                let max_scale = f32::min(
-                    panel_rect.width() as f32 / 2.0,
-                    panel_rect.height() as f32 / 2.0,
-                );
-                app.image_relative_pos.scale =
-                    app.image_relative_pos.scale.clamp(min_scale, max_scale);
-                app.image_relative_pos.scale;
-
-                // Adjust the x and y translation so the cursor's location
-                // relative to the image is unchanged
-                let zoom_origin = input
-                    .pointer
-                    .interact_pos()
-                    .filter(|pos| panel_rect.contains(*pos))
-                    .unwrap_or(panel_rect.center());
-                let original_image_pos = screen_to_image_coords(
-                    zoom_origin,
-                    &ImageTransformations {
-                        scale: original_scale,
-                        ..app.image_relative_pos
-                    },
-                    (app.image.width as f32, app.image.height as f32),
-                    ui.ctx().available_rect(),
-                );
-                let new_image_pos = screen_to_image_coords(
-                    zoom_origin,
-                    &app.image_relative_pos,
-                    (app.image.width as f32, app.image.height as f32),
-                    ui.ctx().available_rect(),
-                );
-                let image_delta_x = original_image_pos.x - new_image_pos.x;
-                let image_delta_y = original_image_pos.y - new_image_pos.y;
-                let screen_delta_x = image_delta_x * app.image_relative_pos.scale;
-                let screen_delta_y = image_delta_y * app.image_relative_pos.scale;
-                app.image_relative_pos.x_translation -= screen_delta_x;
-                app.image_relative_pos.y_translation -= screen_delta_y;
-            }
-
-            // TODO not do this janky dt hack to get around
-            // is_decidedly_dragging() not handling file -> open well
-            if input.pointer.is_decidedly_dragging() && input.unstable_dt < 1.0 {
-                app.image_relative_pos.x_translation += input.pointer.delta().x;
-                app.image_relative_pos.y_translation += input.pointer.delta().y;
-            };
+            // Let whatever tool is active do its thing
+            app.tool.clone().handle_input(input, app, ctx);
 
             // Ensure the image is in-bounds
-            let width = app.image.width as f32 * app.image_relative_pos.scale;
-            let height = app.image.height as f32 * app.image_relative_pos.scale;
-            let margin = 0.25;
-            let min_x = panel_rect.width() * margin - (panel_rect.width() + width) / 2.0;
-            let max_x = panel_rect.width() * (1.0 - margin) - (panel_rect.width() - width) / 2.0;
-            let min_y = panel_rect.height() * margin - (panel_rect.height() + height) / 2.0;
-            let max_y = panel_rect.height() * (1.0 - margin) - (panel_rect.height() - height) / 2.0;
-            app.image_relative_pos.x_translation =
-                app.image_relative_pos.x_translation.clamp(min_x, max_x);
-            app.image_relative_pos.y_translation =
-                app.image_relative_pos.y_translation.clamp(min_y, max_y);
+            clamp_image_to_bounds(app, panel_rect);
         });
 
         make_draggable_windows(app, ctx, frame);
