@@ -43,10 +43,8 @@ pub fn image_to_screen_coords(
     image_size: (f32, f32),
     image_panel_bounds: Rect,
 ) -> Pos2 {
-    let base_screen_x =
-        (image_panel_bounds.max.x - image_panel_bounds.min.x) / 2.0 + image_panel_bounds.min.x;
-    let base_screen_y =
-        (image_panel_bounds.max.y - image_panel_bounds.min.y) / 2.0 + image_panel_bounds.min.y;
+    let base_screen_x = image_panel_bounds.width() / 2.0 + image_panel_bounds.min.x;
+    let base_screen_y = image_panel_bounds.height() / 2.0 + image_panel_bounds.min.y;
 
     let offset_screen_x = base_screen_x + image_transformations.x_translation;
     let offset_screen_y = base_screen_y + image_transformations.y_translation;
@@ -54,18 +52,64 @@ pub fn image_to_screen_coords(
     let scaled_image_width = image_size.0 * image_transformations.scale;
     let scaled_image_height = image_size.1 * image_transformations.scale;
 
-    let transformed_image_x = offset_screen_x - scaled_image_width / 2.0;
-    let transformed_image_y = offset_screen_y - scaled_image_height / 2.0;
-    let transformed_image_width = scaled_image_width;
-    let transformed_image_height = scaled_image_height;
+    let image_screen_x = offset_screen_x - scaled_image_width / 2.0;
+    let image_screen_y = offset_screen_y - scaled_image_height / 2.0;
+    let image_screen_width = scaled_image_width;
+    let image_screen_height = scaled_image_height;
 
     let frac_across_width = image_pos.x / image_size.0;
     let frac_across_height = image_pos.y / image_size.1;
 
-    let screen_x = transformed_image_x + transformed_image_width * frac_across_width;
-    let screen_y = transformed_image_y + transformed_image_height * frac_across_height;
+    let screen_x = image_screen_x + image_screen_width * frac_across_width;
+    let screen_y = image_screen_y + image_screen_height * frac_across_height;
 
     pos2(screen_x, screen_y)
+}
+
+/// Converts screen coordinates to image coordinates
+///
+/// Image coordinates range from (0, 0) at the top-left of the image to (width,
+/// height) of the image (in pixels)
+///
+/// Screen coordinates range from (0, 0) at the top-left of the window to
+/// (width, height) of the screen (in egui "points", which may be multiple
+/// physical pixels)
+///
+/// # Arguments
+/// - `screen_pos` - the coordinates to transform from screen to image
+/// - `image_transformations` - the transformations applied to the image
+/// - `image_size` - the dimensions (in pixels) of the image
+/// - `image_panel_bounds` - the bounding box (in egui "points") of the panel in
+/// the UI that contains the image (excluding the menu bar, control panel, etc.)
+pub fn screen_to_image_coords(
+    screen_pos: Pos2,
+    image_transformations: &ImageTransformations,
+    image_size: (f32, f32),
+    image_panel_bounds: Rect,
+) -> Pos2 {
+    let base_screen_x = image_panel_bounds.width() / 2.0 + image_panel_bounds.min.x;
+    let base_screen_y = image_panel_bounds.height() / 2.0 + image_panel_bounds.min.y;
+
+    let offset_screen_x = base_screen_x + image_transformations.x_translation;
+    let offset_screen_y = base_screen_y + image_transformations.y_translation;
+
+    let scaled_image_width = image_size.0 * image_transformations.scale;
+    let scaled_image_height = image_size.1 * image_transformations.scale;
+
+    let image_screen_x = offset_screen_x - scaled_image_width / 2.0;
+    let image_screen_y = offset_screen_y - scaled_image_height / 2.0;
+    let image_screen_width = scaled_image_width;
+    let image_screen_height = scaled_image_height;
+
+    let dist_across_width = screen_pos.x - image_screen_x;
+    let dist_across_height = screen_pos.y - image_screen_y;
+    let frac_across_width = dist_across_width / image_screen_width;
+    let frac_across_height = dist_across_height / image_screen_height;
+
+    let image_x = image_size.0 * frac_across_width;
+    let image_y = image_size.1 * frac_across_height;
+
+    pos2(image_x, image_y)
 }
 
 /// Makes basic and global style changes to the given context
@@ -337,19 +381,79 @@ fn make_main_panel(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
     CentralPanel::default().frame(panel_frame).show(ctx, |ui| {
         // Handle user inputs
         ui.input(|input| {
-            app.image_relative_pos.scale *= f32::powf(1.01, input.scroll_delta.y);
             let panel_rect = ui.ctx().available_rect();
-            let min_scale = 0.5
-                * f32::min(
-                    panel_rect.width() / app.image.width as f32,
-                    panel_rect.height() / app.image.height as f32,
+
+            // TODO temp testing
+            if let Some(pos) = input.pointer.interact_pos() {
+                let pixel_pos = screen_to_image_coords(
+                    pos,
+                    &app.image_relative_pos,
+                    (app.image.width as f32, app.image.height as f32),
+                    panel_rect,
                 );
-            let max_scale = f32::min(
-                panel_rect.width() as f32 / 2.0,
-                panel_rect.height() as f32 / 2.0,
-            );
-            app.image_relative_pos.scale = app.image_relative_pos.scale.clamp(min_scale, max_scale);
-            app.image_relative_pos.scale;
+
+                let pixel_col = (pixel_pos.x - 0.5).round() as isize;
+                let pixel_row = (pixel_pos.y - 0.5).round() as isize;
+                if (0..app.image.width).contains(&(pixel_col as usize))
+                    && (0..app.image.height).contains(&(pixel_row as usize))
+                {
+                    let buffer_index =
+                        (pixel_col as usize + app.image.width * pixel_row as usize) * 4;
+                    app.image.pixels[buffer_index + 0] = 255;
+                    app.image.pixels[buffer_index + 1] = 0;
+                    app.image.pixels[buffer_index + 2] = 0;
+                    app.image.pixels[buffer_index + 3] = 255;
+                }
+            }
+
+            if input.scroll_delta.y.abs() > f32::EPSILON {
+                let original_scale = app.image_relative_pos.scale;
+                let scale_multiplier = f32::powf(1.01, input.scroll_delta.y);
+
+                // Adjust the scale
+                app.image_relative_pos.scale *= scale_multiplier;
+                let min_scale = 0.5
+                    * f32::min(
+                        panel_rect.width() / app.image.width as f32,
+                        panel_rect.height() / app.image.height as f32,
+                    );
+                let max_scale = f32::min(
+                    panel_rect.width() as f32 / 2.0,
+                    panel_rect.height() as f32 / 2.0,
+                );
+                app.image_relative_pos.scale =
+                    app.image_relative_pos.scale.clamp(min_scale, max_scale);
+                app.image_relative_pos.scale;
+
+                // Adjust the x and y translation so the cursor's location
+                // relative to the image is unchanged
+                let zoom_origin = input
+                    .pointer
+                    .interact_pos()
+                    .filter(|pos| panel_rect.contains(*pos))
+                    .unwrap_or(panel_rect.center());
+                let original_image_pos = screen_to_image_coords(
+                    zoom_origin,
+                    &ImageTransformations {
+                        scale: original_scale,
+                        ..app.image_relative_pos
+                    },
+                    (app.image.width as f32, app.image.height as f32),
+                    ui.ctx().available_rect(),
+                );
+                let new_image_pos = screen_to_image_coords(
+                    zoom_origin,
+                    &app.image_relative_pos,
+                    (app.image.width as f32, app.image.height as f32),
+                    ui.ctx().available_rect(),
+                );
+                let image_delta_x = original_image_pos.x - new_image_pos.x;
+                let image_delta_y = original_image_pos.y - new_image_pos.y;
+                let screen_delta_x = image_delta_x * app.image_relative_pos.scale;
+                let screen_delta_y = image_delta_y * app.image_relative_pos.scale;
+                app.image_relative_pos.x_translation -= screen_delta_x;
+                app.image_relative_pos.y_translation -= screen_delta_y;
+            }
 
             // TODO not do this janky dt hack to get around
             // is_decidedly_dragging() not handling file -> open well
