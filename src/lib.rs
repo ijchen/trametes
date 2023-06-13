@@ -13,4 +13,5 @@
 
 mod app;
 mod fileio;
+mod ui;
 pub use app::TrametesApp;
