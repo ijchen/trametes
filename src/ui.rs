@@ -383,35 +383,13 @@ fn make_main_panel(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
         ui.input(|input| {
             let panel_rect = ui.ctx().available_rect();
 
-            // TODO temp testing
-            if let Some(pos) = input.pointer.interact_pos() {
-                let pixel_pos = screen_to_image_coords(
-                    pos,
-                    &app.image_relative_pos,
-                    (app.image.width as f32, app.image.height as f32),
-                    panel_rect,
-                );
-
-                let pixel_col = (pixel_pos.x - 0.5).round() as isize;
-                let pixel_row = (pixel_pos.y - 0.5).round() as isize;
-                if (0..app.image.width).contains(&(pixel_col as usize))
-                    && (0..app.image.height).contains(&(pixel_row as usize))
-                {
-                    let buffer_index =
-                        (pixel_col as usize + app.image.width * pixel_row as usize) * 4;
-                    app.image.pixels[buffer_index + 0] = 255;
-                    app.image.pixels[buffer_index + 1] = 0;
-                    app.image.pixels[buffer_index + 2] = 0;
-                    app.image.pixels[buffer_index + 3] = 255;
-                }
-            }
-
-            if input.scroll_delta.y.abs() > f32::EPSILON {
+            // TODO do we want to do an epsilon comparison here? I feel like
+            // it's reasonable to expect *exactly* 1.0, but maybe not. Idk
+            if input.zoom_delta() != 1.0 {
                 let original_scale = app.image_relative_pos.scale;
-                let scale_multiplier = f32::powf(1.01, input.scroll_delta.y);
 
                 // Adjust the scale
-                app.image_relative_pos.scale *= scale_multiplier;
+                app.image_relative_pos.scale *= input.zoom_delta();
                 let min_scale = 0.5
                     * f32::min(
                         panel_rect.width() / app.image.width as f32,
