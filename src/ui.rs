@@ -340,8 +340,8 @@ fn make_draggable_windows(app: &mut TrametesApp, ctx: &Context, frame: &mut Fram
         .default_rect(rect(0.0, 0.0, width * 0.025, height * 0.33))
         .open(&mut app.windows.tools)
         .show(ctx, |ui| {
-            ui.radio_value(&mut app.tool, Tool::Pan, "Pan");
-            ui.radio_value(&mut app.tool, Tool::Brush, "Brush");
+            ui.radio_value(&mut app.tools.current_tool, Tool::Pan, "Pan");
+            ui.radio_value(&mut app.tools.current_tool, Tool::Brush, "Brush");
 
             // Allow filling extra room with empty space (prevents automatic
             // shrinking after resizing)
@@ -452,7 +452,8 @@ fn make_main_panel(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
             zoom_image(input.zoom_delta(), zoom_origin, app, panel_rect);
 
             // Let whatever tool is active do its thing
-            app.tool.clone().handle_input(input, app, ctx);
+            let current_tool = app.tools.current_tool;
+            current_tool.handle_input(input, app, ctx);
 
             // Ensure the image is in-bounds
             clamp_image_to_bounds(app, panel_rect);

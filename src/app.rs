@@ -1,6 +1,6 @@
 use eframe::{App, CreationContext, Frame};
 
-use crate::{tools::Tool, ui::draw_ui};
+use crate::{tools::ToolState, ui::draw_ui};
 
 #[derive(Debug)]
 pub struct VisibleWindows {
@@ -71,7 +71,7 @@ pub struct TrametesApp {
     pub(crate) windows: VisibleWindows,
     pub(crate) image: PixelBuffer,
     pub(crate) image_relative_pos: ImageTransformations,
-    pub(crate) tool: Tool,
+    pub(crate) tools: ToolState,
 }
 
 impl Default for TrametesApp {
@@ -80,7 +80,7 @@ impl Default for TrametesApp {
             windows: Default::default(),
             image: Default::default(),
             image_relative_pos: Default::default(),
-            tool: Default::default(),
+            tools: Default::default(),
         }
     }
 }

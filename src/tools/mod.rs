@@ -5,6 +5,8 @@ use egui::{Context, InputState};
 
 use crate::TrametesApp;
 
+use self::{brush::BrushSettings, pan::PanSettings};
+
 /// A "tool" usable in the editor (brush, eraser, pan, shape)
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
 pub enum Tool {
@@ -25,4 +27,11 @@ impl Tool {
             Brush => brush::handle_input(input, app, ctx),
         }
     }
+}
+
+#[derive(Debug, Default)]
+pub struct ToolState {
+    pub current_tool: Tool,
+    pub pan: PanSettings,
+    pub brush: BrushSettings,
 }

@@ -26,3 +26,6 @@ pub fn handle_input(input: &InputState, app: &mut TrametesApp, ctx: &Context) {
         }
     }
 }
+
+#[derive(Debug, Default)]
+pub struct BrushSettings {}

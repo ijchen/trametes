@@ -10,3 +10,6 @@ pub fn handle_input(input: &InputState, app: &mut TrametesApp, _ctx: &Context) {
         app.image_relative_pos.y_translation += input.pointer.delta().y;
     };
 }
+
+#[derive(Debug, Default)]
+pub struct PanSettings {}
