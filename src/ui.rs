@@ -3,8 +3,9 @@ use egui::{
     pos2, warn_if_debug_build, CentralPanel, Color32, ColorImage, Context, FontFamily, FontId,
     ImageData, Pos2, Rect, TextStyle, TextureFilter, TextureOptions, TopBottomPanel, Ui, Window,
 };
+use native_dialog::{MessageDialog, MessageType};
 
-use crate::{app::ImageTransformations, fileio, tools::Tool, TrametesApp};
+use crate::{app::ImageTransformations, commands, tools::Tool, TrametesApp};
 
 /// Makes a Rect with given (x, y) (top left corner) and width x height
 fn rect(x: f32, y: f32, width: f32, height: f32) -> Rect {
@@ -107,7 +108,23 @@ pub fn screen_to_image_coords(
     pos2(image_x, image_y)
 }
 
-pub fn zoom_image(zoom_delta: f32, zoom_origin: Pos2, app: &mut TrametesApp, panel_rect: Rect) {
+/// Displays a popup message to the user
+// TODO this probably doesn't work on web, need web-specific workaround?
+pub fn message_popup(msg: &str, msg_type: MessageType) {
+    let title = match msg_type {
+        MessageType::Info => "Info",
+        MessageType::Warning => "Warning",
+        MessageType::Error => "Something went wrong",
+    };
+    MessageDialog::new()
+        .set_type(msg_type)
+        .set_title(title)
+        .set_text(msg)
+        .show_alert()
+        .unwrap(); // TODO handle errors here
+}
+
+fn zoom_image(zoom_delta: f32, zoom_origin: Pos2, app: &mut TrametesApp, panel_rect: Rect) {
     // TODO do we want to do an epsilon comparison here? I feel like
     // it's reasonable to expect *exactly* 1.0, but maybe not. Idk
     if zoom_delta != 1.0 {
@@ -186,34 +203,34 @@ fn make_top_menu_bar(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
             // File
             ui.menu_button("File", |ui| {
                 if ui.button("New...").clicked() {
-                    todo!()
+                    commands::new(app);
                 }
 
                 if ui.button("Open...").clicked() {
-                    fileio::command_open(app);
+                    commands::open(app);
                 }
 
                 ui.menu_button("Open Recent", |ui| {
                     // TODO
                     if ui.button("TODO put stuff here lol").clicked() {
-                        todo!()
+                        commands::todo("open recent");
                     }
                 });
 
                 ui.separator();
 
                 if ui.button("Save").clicked() {
-                    fileio::command_save(app);
+                    commands::save(app);
                 }
 
                 if ui.button("Save As...").clicked() {
-                    fileio::command_save_as(app);
+                    commands::save_as(app);
                 }
 
                 ui.separator();
 
                 if ui.button("Settings...").clicked() {
-                    todo!()
+                    commands::todo("settings");
                 }
 
                 // No "Quit" on the web
@@ -227,29 +244,29 @@ fn make_top_menu_bar(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
             // Edit
             ui.menu_button("Edit", |ui| {
                 if ui.button("Undo").clicked() {
-                    todo!()
+                    commands::todo("undo");
                 }
 
                 if ui.button("Redo").clicked() {
-                    todo!()
+                    commands::todo("redo");
                 }
 
                 ui.separator();
 
                 if ui.button("Cut").clicked() {
-                    todo!()
+                    commands::todo("cut");
                 }
 
                 if ui.button("Copy").clicked() {
-                    todo!()
+                    commands::todo("copy");
                 }
 
                 if ui.button("Paste").clicked() {
-                    todo!()
+                    commands::todo("paste");
                 }
 
                 if ui.button("Paste into New Image").clicked() {
-                    todo!()
+                    commands::todo("paste into new image");
                 }
             });
             ui.menu_button("View", |ui| {

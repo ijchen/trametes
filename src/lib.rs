@@ -12,6 +12,7 @@
 // `app` mod? This feels overcomplicated
 
 mod app;
+mod commands;
 mod fileio;
 mod tools;
 mod ui;
