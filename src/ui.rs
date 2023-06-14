@@ -3,14 +3,8 @@ use egui::{
     pos2, warn_if_debug_build, CentralPanel, Color32, ColorImage, Context, FontFamily, FontId,
     ImageData, Pos2, Rect, TextStyle, TextureFilter, TextureOptions, TopBottomPanel, Ui, Window,
 };
-use native_dialog::MessageType;
 
-use crate::{
-    app::{ImageTransformations, PixelBuffer},
-    fileio::{get_image_path, info_popup, read_image_from_file},
-    tools::Tool,
-    TrametesApp,
-};
+use crate::{app::ImageTransformations, fileio, tools::Tool, TrametesApp};
 
 /// Makes a Rect with given (x, y) (top left corner) and width x height
 fn rect(x: f32, y: f32, width: f32, height: f32) -> Rect {
@@ -196,29 +190,7 @@ fn make_top_menu_bar(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
                 }
 
                 if ui.button("Open...").clicked() {
-                    match get_image_path() {
-                        Some(path) => {
-                            match read_image_from_file(&path) {
-                                Some(((width, height), pixels)) => {
-                                    app.image = PixelBuffer {
-                                        pixels,
-                                        width: width as usize,
-                                        height: height as usize,
-                                    };
-
-                                    app.image_relative_pos = ImageTransformations::default();
-                                }
-                                None => {
-                                    eprintln!("failed to read image from file path: {path:?}");
-                                    info_popup("Failed to read file", MessageType::Error);
-                                }
-                            };
-                        }
-                        None => {
-                            // The user likely hit "cancel", do nothing and
-                            // carry on
-                        }
-                    }
+                    fileio::command_open(app);
                 }
 
                 ui.menu_button("Open Recent", |ui| {
@@ -235,7 +207,7 @@ fn make_top_menu_bar(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
                 }
 
                 if ui.button("Save As...").clicked() {
-                    todo!()
+                    fileio::command_save_as(app);
                 }
 
                 ui.separator();

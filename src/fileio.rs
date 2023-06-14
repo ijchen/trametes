@@ -1,10 +1,16 @@
 use std::path::{Path, PathBuf};
 
-use image::{io::Reader, GenericImageView};
+use image::{io::Reader, DynamicImage, GenericImageView, ImageBuffer};
 use native_dialog::{FileDialog, MessageDialog, MessageType};
 
+use crate::{
+    app::{ImageTransformations, PixelBuffer},
+    TrametesApp,
+};
+
 /// Displays a popup message to the user
-pub fn info_popup(msg: &str, msg_type: MessageType) {
+// TODO this probably doesn't work on web, need web-specific workaround?
+pub fn message_popup(msg: &str, msg_type: MessageType) {
     let title = match msg_type {
         MessageType::Info => "Info",
         MessageType::Warning => "Warning",
@@ -20,19 +26,19 @@ pub fn info_popup(msg: &str, msg_type: MessageType) {
 
 /// Prompts the user for an image file to open, returning a path (or None if the
 /// user did not provide one)
-pub fn get_image_path() -> Option<PathBuf> {
+fn get_image_path_to_open() -> Option<PathBuf> {
     match FileDialog::new().show_open_single_file() {
         Ok(path) => path,
         Err(err) => {
             eprintln!("failed to get an image file path from the user: {err:?}");
-            info_popup("Failed to prompt for a file to open", MessageType::Error);
+            message_popup("Failed to prompt for a file to open", MessageType::Error);
             None
         }
     }
 }
 
 /// Reads an image from a file path
-pub fn read_image_from_file(path: &Path) -> Option<((u32, u32), Vec<u8>)> {
+fn read_image_from_file(path: &Path) -> Option<((u32, u32), Vec<u8>)> {
     let img = Reader::open(path)
         .ok()?
         // Guess the encoding format based on the file contents instead of the
@@ -50,4 +56,83 @@ pub fn read_image_from_file(path: &Path) -> Option<((u32, u32), Vec<u8>)> {
         .collect();
 
     Some(((width, height), pixels))
+}
+
+/// Prompts the user for an image to open, then opens it
+pub fn command_open(app: &mut TrametesApp) {
+    match get_image_path_to_open() {
+        Some(path) => {
+            match read_image_from_file(&path) {
+                Some(((width, height), pixels)) => {
+                    app.image = PixelBuffer {
+                        pixels,
+                        width: width as usize,
+                        height: height as usize,
+                    };
+
+                    app.image_relative_pos = ImageTransformations::default();
+                }
+                None => {
+                    eprintln!("failed to read image from file path: {path:?}");
+                    message_popup("Failed to read file", MessageType::Error);
+                }
+            };
+        }
+        None => {
+            // The user likely hit "cancel", do nothing and
+            // carry on
+        }
+    }
+}
+
+/// Prompts the user for a path to save an image to, returning the path (or None
+/// if the user did not provide one)
+fn get_image_path_to_save_as() -> Option<PathBuf> {
+    match FileDialog::new().show_save_single_file() {
+        Ok(path) => path,
+        Err(err) => {
+            eprintln!("failed to get an image file path from the user: {err:?}");
+            message_popup("Failed to prompt for a file name", MessageType::Error);
+            None
+        }
+    }
+}
+
+/// Saves an image to a file path
+fn save_image_to_file(path: &Path, image: &PixelBuffer) -> Option<()> {
+    let img = DynamicImage::ImageRgba8(
+        ImageBuffer::from_raw(
+            image.width as u32,
+            image.height as u32,
+            // TODO how can we avoid this clone? It shouldn't be necessary
+            image.pixels.clone(),
+        )
+        .unwrap(),
+    );
+
+    match img.save(path) {
+        Ok(()) => Some(()),
+        Err(err) => {
+            eprintln!("failed to save image to file: {err:?}");
+            None
+        }
+    }
+}
+
+/// Prompts the user for a file path to save the current image to, then saves it
+pub fn command_save_as(app: &mut TrametesApp) {
+    match get_image_path_to_save_as() {
+        Some(path) => {
+            match save_image_to_file(&path, &app.image) {
+                Some(()) => { /* Saved successfully, hurray! */ }
+                None => {
+                    message_popup("Failed to save file", MessageType::Error);
+                }
+            };
+        }
+        None => {
+            // The user likely hit "cancel", do nothing and
+            // carry on
+        }
+    }
 }
