@@ -203,7 +203,7 @@ fn make_top_menu_bar(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
                 ui.separator();
 
                 if ui.button("Save").clicked() {
-                    todo!()
+                    fileio::command_save(app);
                 }
 
                 if ui.button("Save As...").clicked() {
@@ -412,6 +412,7 @@ fn make_main_panel(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
 
     CentralPanel::default().frame(panel_frame).show(ctx, |ui| {
         // Handle user inputs
+        // TODO separate this out - I don't think it belongs in UI code
         ui.input(|input| {
             let panel_rect = ui.ctx().available_rect();
 

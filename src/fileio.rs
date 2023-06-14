@@ -69,8 +69,8 @@ pub fn command_open(app: &mut TrametesApp) {
                         width: width as usize,
                         height: height as usize,
                     };
-
                     app.image_relative_pos = ImageTransformations::default();
+                    app.path = Some(path);
                 }
                 None => {
                     eprintln!("failed to read image from file path: {path:?}");
@@ -98,8 +98,9 @@ fn get_image_path_to_save_as() -> Option<PathBuf> {
     }
 }
 
-/// Saves an image to a file path
-fn save_image_to_file(path: &Path, image: &PixelBuffer) -> Option<()> {
+/// Saves an image to a file path, displaying an error to the user if saving
+/// fails
+fn save_image_to_file(path: &Path, image: &PixelBuffer) {
     let img = DynamicImage::ImageRgba8(
         ImageBuffer::from_raw(
             image.width as u32,
@@ -110,12 +111,9 @@ fn save_image_to_file(path: &Path, image: &PixelBuffer) -> Option<()> {
         .unwrap(),
     );
 
-    match img.save(path) {
-        Ok(()) => Some(()),
-        Err(err) => {
-            eprintln!("failed to save image to file: {err:?}");
-            None
-        }
+    if let Err(err) = img.save(path) {
+        eprintln!("failed to save image to file: {err:?}");
+        message_popup("Failed to save file", MessageType::Error);
     }
 }
 
@@ -123,16 +121,22 @@ fn save_image_to_file(path: &Path, image: &PixelBuffer) -> Option<()> {
 pub fn command_save_as(app: &mut TrametesApp) {
     match get_image_path_to_save_as() {
         Some(path) => {
-            match save_image_to_file(&path, &app.image) {
-                Some(()) => { /* Saved successfully, hurray! */ }
-                None => {
-                    message_popup("Failed to save file", MessageType::Error);
-                }
-            };
+            save_image_to_file(&path, &app.image);
+            app.path = Some(path);
         }
         None => {
             // The user likely hit "cancel", do nothing and
             // carry on
         }
+    }
+}
+
+/// Saves the current image to the file path it came from, or prompts the user
+/// for a file path if the current image didn't come from a file, then saves the
+/// image to that path
+pub fn command_save(app: &mut TrametesApp) {
+    match &app.path {
+        Some(path) => save_image_to_file(&path, &app.image),
+        None => command_save_as(app),
     }
 }

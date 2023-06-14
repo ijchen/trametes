@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use eframe::{App, CreationContext, Frame};
 
 use crate::{tools::ToolState, ui::draw_ui};
@@ -66,23 +68,23 @@ impl Default for ImageTransformations {
 }
 
 /// The persistant state of an instance of Trametes
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct TrametesApp {
+    /// Keeps track of which draggable windows are currently visible
     pub(crate) windows: VisibleWindows,
-    pub(crate) image: PixelBuffer,
-    pub(crate) image_relative_pos: ImageTransformations,
-    pub(crate) tools: ToolState,
-}
 
-impl Default for TrametesApp {
-    fn default() -> Self {
-        Self {
-            windows: Default::default(),
-            image: Default::default(),
-            image_relative_pos: Default::default(),
-            tools: Default::default(),
-        }
-    }
+    /// A buffer containing the actual pixels of the image
+    pub(crate) image: PixelBuffer,
+
+    /// The file path of the image we're editing, if it came from a file
+    pub(crate) path: Option<PathBuf>,
+
+    /// The relative visual transformations applied to the image (zooming,
+    /// panning, etc.)
+    pub(crate) image_relative_pos: ImageTransformations,
+
+    /// The state of the tools (pan, brush, etc.)
+    pub(crate) tools: ToolState,
 }
 
 impl TrametesApp {
