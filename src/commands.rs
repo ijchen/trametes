@@ -1,3 +1,7 @@
+use std::borrow::Cow;
+
+use arboard::{Clipboard, ImageData};
+use egui::egui_assert;
 use native_dialog::MessageType;
 
 use crate::{
@@ -68,4 +72,42 @@ pub fn save(app: &mut TrametesApp) {
         Some(path) => fileio::save_image_to_file(&path, &app.image),
         None => save_as(app),
     }
+}
+
+/// Copies the selected part of the image into the clipboard, or the entire
+/// image if there is no active selection
+pub fn copy(app: &mut TrametesApp) {
+    // TODO only copy selection if there is an active selection
+
+    // TODO spawn a process to persist with the clipboard even if Trametes is
+    // closed (see https://docs.rs/arboard/latest/arboard/trait.SetExtLinux.html#tymethod.wait)
+
+    let mut clipboard = Clipboard::new().unwrap(); // TODO handle errors here
+
+    let aslkdjfalsk = ImageData {
+        width: app.image.width,
+        height: app.image.height,
+        bytes: Cow::from(&app.image.pixels),
+    };
+
+    clipboard.set_image(aslkdjfalsk).unwrap(); // TODO handle errors here
+}
+
+/// Pastes an image from the clipboard into a new image
+pub fn paste_into_new_image(app: &mut TrametesApp) {
+    let mut clipboard = Clipboard::new().unwrap(); // TODO handle errors here
+
+    let image = clipboard.get_image().unwrap(); // TODO handle errors here
+
+    let width = image.width;
+    let height = image.height;
+    let bytes = image.bytes;
+
+    egui_assert!(bytes.len() == width * height * 4);
+
+    app.image.width = image.width;
+    app.image.height = image.height;
+    app.image.pixels = bytes.to_vec();
+    app.image_relative_pos = Default::default();
+    app.path = None;
 }

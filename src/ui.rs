@@ -258,7 +258,7 @@ fn make_top_menu_bar(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
                 }
 
                 if ui.button("Copy").clicked() {
-                    commands::todo("copy");
+                    commands::copy(app);
                 }
 
                 if ui.button("Paste").clicked() {
@@ -266,7 +266,7 @@ fn make_top_menu_bar(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
                 }
 
                 if ui.button("Paste into New Image").clicked() {
-                    commands::todo("paste into new image");
+                    commands::paste_into_new_image(app);
                 }
             });
             ui.menu_button("View", |ui| {
