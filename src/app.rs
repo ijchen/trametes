@@ -40,6 +40,21 @@ impl Default for ImageTransformations {
     }
 }
 
+#[derive(Debug)]
+pub struct Colors {
+    pub primary: [u8; 4],
+    pub secondary: [u8; 4],
+}
+
+impl Default for Colors {
+    fn default() -> Self {
+        Self {
+            primary: [0, 0, 0, 255],
+            secondary: [255, 255, 255, 255],
+        }
+    }
+}
+
 /// The persistant state of an instance of Trametes
 #[derive(Debug, Default)]
 pub struct TrametesApp {
@@ -58,6 +73,9 @@ pub struct TrametesApp {
 
     /// The state of the tools (pan, brush, etc.)
     pub(crate) tools: ToolState,
+
+    /// The primary and secondary colors
+    pub(crate) colors: Colors,
 }
 
 impl TrametesApp {

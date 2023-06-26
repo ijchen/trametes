@@ -337,7 +337,8 @@ fn make_draggable_windows(app: &mut TrametesApp, ctx: &Context, frame: &mut Fram
         .default_rect(rect(0.0, 9999.0, width * 0.12, width * 0.12)) // TODO not just hardcode 9999
         .open(&mut app.windows.colors)
         .show(ctx, |ui| {
-            // TODO put stuff here
+            ui.color_edit_button_srgba_unmultiplied(&mut app.colors.primary);
+            ui.color_edit_button_srgba_unmultiplied(&mut app.colors.secondary);
 
             // Allow filling extra room with empty space (prevents automatic
             // shrinking after resizing)

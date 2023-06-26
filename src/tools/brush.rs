@@ -2,7 +2,7 @@ use egui::{Context, InputState};
 
 use crate::{math, pixel_buffer::PixelBuffer, ui::screen_to_image_coords, TrametesApp};
 
-fn apply_brush(pixels: &mut PixelBuffer, brush: &BrushSettings, pos: (f32, f32)) {
+fn apply_brush(pixels: &mut PixelBuffer, brush: &BrushSettings, pos: (f32, f32), color: &[u8; 4]) {
     let x1 = (pos.0 - brush.diameter / 2.0)
         .clamp(0.0, pixels.width as f32 - 1.0)
         .floor() as usize;
@@ -27,9 +27,13 @@ fn apply_brush(pixels: &mut PixelBuffer, brush: &BrushSettings, pos: (f32, f32))
             (col as f32 + 0.5, row as f32 + 0.5),
             1.0,
         ) / 1.0;
-        *r = math::lerp(percent_of_pixel_covered, *r as f32, 0.0).round() as u8;
-        *g = math::lerp(percent_of_pixel_covered, *g as f32, 0.0).round() as u8;
-        *b = math::lerp(percent_of_pixel_covered, *b as f32, 0.0).round() as u8;
+
+        // TODO account for alpha
+        assert_eq!(color[3], 255);
+
+        *r = math::lerp(percent_of_pixel_covered, *r as f32, color[0] as f32).round() as u8;
+        *g = math::lerp(percent_of_pixel_covered, *g as f32, color[1] as f32).round() as u8;
+        *b = math::lerp(percent_of_pixel_covered, *b as f32, color[2] as f32).round() as u8;
     }
 }
 
@@ -43,7 +47,12 @@ pub fn handle_input(input: &InputState, app: &mut TrametesApp, ctx: &Context) {
                 ctx.available_rect(),
             );
 
-            apply_brush(&mut app.image, &app.tools.brush, pixel_pos.into())
+            apply_brush(
+                &mut app.image,
+                &app.tools.brush,
+                pixel_pos.into(),
+                &app.colors.primary,
+            )
         }
     }
 }
