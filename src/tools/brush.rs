@@ -60,7 +60,7 @@ pub fn handle_input(input: &InputState, app: &mut TrametesApp, ctx: &Context) {
 #[derive(Debug)]
 pub struct BrushSettings {
     /// The diameter of the brush, in pixels
-    diameter: f32,
+    pub diameter: f32,
 }
 
 impl Default for BrushSettings {
