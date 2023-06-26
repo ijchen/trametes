@@ -4,10 +4,7 @@ use arboard::{Clipboard, ImageData};
 use egui::egui_assert;
 use native_dialog::MessageType;
 
-use crate::{
-    app::{ImageTransformations, PixelBuffer},
-    fileio, ui, TrametesApp,
-};
+use crate::{app::ImageTransformations, fileio, pixel_buffer::PixelBuffer, ui, TrametesApp};
 
 /// Shows a "feature not available" popup box
 pub fn todo(feature_name: &str) {
@@ -81,16 +78,17 @@ pub fn copy(app: &mut TrametesApp) {
 
     // TODO spawn a process to persist with the clipboard even if Trametes is
     // closed (see https://docs.rs/arboard/latest/arboard/trait.SetExtLinux.html#tymethod.wait)
+    // (only necessary on linux)
 
     let mut clipboard = Clipboard::new().unwrap(); // TODO handle errors here
 
-    let aslkdjfalsk = ImageData {
+    let image_data = ImageData {
         width: app.image.width,
         height: app.image.height,
         bytes: Cow::from(&app.image.pixels),
     };
 
-    clipboard.set_image(aslkdjfalsk).unwrap(); // TODO handle errors here
+    clipboard.set_image(image_data).unwrap(); // TODO handle errors here
 }
 
 /// Pastes an image from the clipboard into a new image

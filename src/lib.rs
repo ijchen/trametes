@@ -14,6 +14,8 @@
 mod app;
 mod commands;
 mod fileio;
+mod math;
+mod pixel_buffer;
 mod tools;
 mod ui;
 pub use app::TrametesApp;

@@ -1,6 +1,37 @@
 use egui::{Context, InputState};
 
-use crate::{ui::screen_to_image_coords, TrametesApp};
+use crate::{math, pixel_buffer::PixelBuffer, ui::screen_to_image_coords, TrametesApp};
+
+fn apply_brush(pixels: &mut PixelBuffer, brush: &BrushSettings, pos: (f32, f32)) {
+    let x1 = (pos.0 - brush.diameter / 2.0)
+        .clamp(0.0, pixels.width as f32 - 1.0)
+        .floor() as usize;
+    let y1 = (pos.1 - brush.diameter / 2.0)
+        .clamp(0.0, pixels.height as f32 - 1.0)
+        .floor() as usize;
+    let x2 = (pos.0 + brush.diameter / 2.0)
+        .clamp(0.0, pixels.width as f32 - 1.0)
+        .ceil() as usize;
+    let y2 = (pos.1 + brush.diameter / 2.0)
+        .clamp(0.0, pixels.height as f32 - 1.0)
+        .ceil() as usize;
+    let width = x2 - x1;
+    let height = y2 - y1;
+    for ((r, g, b, _a), (col, row)) in pixels.iter_block_mut(x1, y1, width, height) {
+        // The pixel is a 1x1 rectangle, so the percentage of it that is covered
+        // by a circle is just the area of intersection divided by 1 pixel
+        // squared
+        let percent_of_pixel_covered = math::square_circle_intersection(
+            pos,
+            brush.diameter / 2.0,
+            (col as f32 + 0.5, row as f32 + 0.5),
+            1.0,
+        ) / 1.0;
+        *r = math::lerp(percent_of_pixel_covered, *r as f32, 0.0).round() as u8;
+        *g = math::lerp(percent_of_pixel_covered, *g as f32, 0.0).round() as u8;
+        *b = math::lerp(percent_of_pixel_covered, *b as f32, 0.0).round() as u8;
+    }
+}
 
 pub fn handle_input(input: &InputState, app: &mut TrametesApp, ctx: &Context) {
     if let Some(pos) = input.pointer.interact_pos() {
@@ -12,20 +43,19 @@ pub fn handle_input(input: &InputState, app: &mut TrametesApp, ctx: &Context) {
                 ctx.available_rect(),
             );
 
-            let pixel_col = (pixel_pos.x - 0.5).round() as isize;
-            let pixel_row = (pixel_pos.y - 0.5).round() as isize;
-            if (0..app.image.width).contains(&(pixel_col as usize))
-                && (0..app.image.height).contains(&(pixel_row as usize))
-            {
-                let buffer_index = (pixel_col as usize + app.image.width * pixel_row as usize) * 4;
-                app.image.pixels[buffer_index + 0] = 0;
-                app.image.pixels[buffer_index + 1] = 0;
-                app.image.pixels[buffer_index + 2] = 0;
-                app.image.pixels[buffer_index + 3] = 255;
-            }
+            apply_brush(&mut app.image, &app.tools.brush, pixel_pos.into())
         }
     }
 }
 
-#[derive(Debug, Default)]
-pub struct BrushSettings {}
+#[derive(Debug)]
+pub struct BrushSettings {
+    /// The diameter of the brush, in pixels
+    diameter: f32,
+}
+
+impl Default for BrushSettings {
+    fn default() -> Self {
+        Self { diameter: 20.0 }
+    }
+}

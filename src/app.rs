@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use eframe::{App, CreationContext, Frame};
 
-use crate::{tools::ToolState, ui::draw_ui};
+use crate::{pixel_buffer::PixelBuffer, tools::ToolState, ui::draw_ui};
 
 #[derive(Debug)]
 pub struct VisibleWindows {
@@ -19,33 +19,6 @@ impl Default for VisibleWindows {
             colors: true,
             history: true,
             layers: true,
-        }
-    }
-}
-
-#[derive(Debug)]
-pub struct PixelBuffer {
-    pub pixels: Vec<u8>,
-    pub width: usize,
-    pub height: usize,
-}
-
-impl Default for PixelBuffer {
-    fn default() -> Self {
-        let width = 800;
-        let height = 600;
-
-        const WHITE: [u8; 4] = [255, 255, 255, 255];
-
-        let pixels: Vec<u8> = std::iter::repeat(WHITE)
-            .take(width * height)
-            .flatten()
-            .collect();
-
-        Self {
-            pixels,
-            width,
-            height,
         }
     }
 }

@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use image::{io::Reader, DynamicImage, GenericImageView, ImageBuffer};
 use native_dialog::{FileDialog, MessageType};
 
-use crate::{app::PixelBuffer, ui};
+use crate::{pixel_buffer::PixelBuffer, ui};
 
 /// Prompts the user for an image file to open, returning a path (or None if the
 /// user did not provide one)
