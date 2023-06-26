@@ -323,8 +323,16 @@ fn make_draggable_windows(app: &mut TrametesApp, ctx: &Context, frame: &mut Fram
         .default_rect(rect(0.0, 0.0, width * 0.025, height * 0.33))
         .open(&mut app.windows.tools)
         .show(ctx, |ui| {
-            ui.radio_value(&mut app.tools.current_tool, Tool::Pan, "Pan");
-            ui.radio_value(&mut app.tools.current_tool, Tool::Brush, "Brush");
+            ui.radio_value(
+                &mut app.tools.current_tool,
+                Tool::Pan,
+                Tool::Pan.to_string(),
+            );
+            ui.radio_value(
+                &mut app.tools.current_tool,
+                Tool::Brush,
+                Tool::Brush.to_string(),
+            );
 
             // Allow filling extra room with empty space (prevents automatic
             // shrinking after resizing)

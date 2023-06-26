@@ -1,6 +1,8 @@
 mod brush;
 mod pan;
 
+use std::fmt::Display;
+
 use egui::{Context, InputState};
 
 use crate::TrametesApp;
@@ -16,6 +18,19 @@ pub enum Tool {
 
     /// Draw with a generic circular "brush-like" shape
     Brush,
+}
+
+impl Display for Tool {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                Self::Pan => "Pan",
+                Self::Brush => "Brush",
+            }
+        )
+    }
 }
 
 impl Tool {
