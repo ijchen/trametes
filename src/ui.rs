@@ -137,12 +137,8 @@ fn zoom_image(zoom_delta: f32, zoom_origin: Pos2, app: &mut TrametesApp, panel_r
                 panel_rect.width() / app.image.width as f32,
                 panel_rect.height() / app.image.height as f32,
             );
-        let max_scale = f32::min(
-            panel_rect.width() as f32 / 2.0,
-            panel_rect.height() as f32 / 2.0,
-        );
+        let max_scale = f32::min(panel_rect.width() / 2.0, panel_rect.height() / 2.0);
         app.image_relative_pos.scale = app.image_relative_pos.scale.clamp(min_scale, max_scale);
-        app.image_relative_pos.scale;
 
         // Adjust the x and y translation so the cursor's location
         // relative to the image is unchanged
@@ -234,10 +230,8 @@ fn make_top_menu_bar(app: &mut TrametesApp, ctx: &Context, frame: &mut Frame) {
                 }
 
                 // No "Quit" on the web
-                if !frame.is_web() {
-                    if ui.button("Quit").clicked() {
-                        frame.close();
-                    }
+                if !frame.is_web() && ui.button("Quit").clicked() {
+                    frame.close();
                 }
             });
 

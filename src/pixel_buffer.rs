@@ -53,6 +53,7 @@ impl PixelBuffer {
                 if col < image_width && row < image_height {
                     let base_index = (row * image_width + col) * 4;
                     let pixel_bytes = (
+                        #[allow(clippy::identity_op)] // ok but this looks nicer
                         mut_refs[base_index + 0].take().unwrap(),
                         mut_refs[base_index + 1].take().unwrap(),
                         mut_refs[base_index + 2].take().unwrap(),

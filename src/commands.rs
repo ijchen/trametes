@@ -22,6 +22,8 @@ pub fn new(app: &mut TrametesApp) {
 
 /// Prompts the user for an image to open, then opens it
 pub fn open(app: &mut TrametesApp) {
+    // I like "explicitly" handling None for readability here :)
+    #[allow(clippy::single_match)]
     match fileio::get_image_path_to_open() {
         Some(path) => {
             match fileio::read_image_from_file(&path) {
@@ -49,6 +51,8 @@ pub fn open(app: &mut TrametesApp) {
 
 /// Prompts the user for a file path to save the current image to, then saves it
 pub fn save_as(app: &mut TrametesApp) {
+    // I like "explicitly" handling None for readability here :)
+    #[allow(clippy::single_match)]
     match fileio::get_image_path_to_save_as() {
         Some(path) => {
             fileio::save_image_to_file(&path, &app.image);
@@ -66,7 +70,7 @@ pub fn save_as(app: &mut TrametesApp) {
 /// image to that path
 pub fn save(app: &mut TrametesApp) {
     match &app.path {
-        Some(path) => fileio::save_image_to_file(&path, &app.image),
+        Some(path) => fileio::save_image_to_file(path, &app.image),
         None => save_as(app),
     }
 }
