@@ -15,8 +15,8 @@ fn apply_brush(pixels: &mut PixelBuffer, brush: &BrushSettings, pos: (f32, f32),
     let y2 = (pos.1 + brush.diameter / 2.0)
         .clamp(0.0, pixels.height as f32 - 1.0)
         .ceil() as usize;
-    let width = x2 - x1;
-    let height = y2 - y1;
+    let width = x2 - x1 + 1;
+    let height = y2 - y1 + 1;
     for ((r, g, b, _a), (col, row)) in pixels.iter_block_mut(x1, y1, width, height) {
         // The pixel is a 1x1 rectangle, so the percentage of it that is covered
         // by a circle is just the area of intersection divided by 1 pixel
