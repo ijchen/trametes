@@ -61,12 +61,20 @@ pub fn square_circle_intersection(
         square_center.0,
         square_center.1,
     );
+
     // If the square is entirely contained within the circle, return the
     // square's area
     if dist_sq_between_centers
         <= (circle_radius - std::f32::consts::SQRT_2 * square_side_len / 2.0).powi(2)
     {
         return square_side_len.powi(2);
+    }
+
+    // If there is definitely no overlap at all, return 0
+    if dist_sq_between_centers
+        >= (circle_radius + std::f32::consts::SQRT_2 * square_side_len / 2.0).powi(2)
+    {
+        return 0.0;
     }
 
     // If the circle is entirely contained within the square, return the
@@ -77,14 +85,6 @@ pub fn square_circle_intersection(
         && circle_center.1 + circle_radius <= square_center.1 + square_side_len / 2.0
     {
         return std::f32::consts::PI * circle_radius.powi(2);
-    }
-
-    // If there is definitely no overlap at all, return 0
-    // TODO use slightly more clever distance math
-    if dist_sq_between_centers
-        >= (circle_radius + std::f32::consts::SQRT_2 * square_side_len / 2.0).powi(2)
-    {
-        return 0.0;
     }
 
     // Fall back on the full (but slow) computation
